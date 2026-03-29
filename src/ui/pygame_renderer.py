@@ -1,5 +1,5 @@
 import pygame
-from src.ui.config import WIDTH, HEIGHT, RADIUS, GAP, COLORS
+from src.ui.config import WIDTH, RADIUS, GAP, COLORS
 
 # MAP BOARD TO SCREEN
 def get_screen_pos(row, col):

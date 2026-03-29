@@ -1,8 +1,8 @@
 import pygame
 import sys
 from src.core.board import TriangleBoard
-from src.ui.config import WIDTH, HEIGHT, RADIUS, GAP, COLORS
-from src.ui.pygame_renderer import get_screen_pos, get_cell_from_mouse, draw, apply_move
+from src.ui.config import WIDTH, HEIGHT
+from src.ui.pygame_renderer import get_cell_from_mouse, draw, apply_move
 
 # INIT PLAYER POSITIONS
 def init_players(board):
