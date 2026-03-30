@@ -111,6 +111,43 @@ class TriangleBoard:
 
         return jump_moves + normal_paths
 
+    # CHECK WINNER
+    def check_winner(self):
+        # Player 1 wins if all pieces are in bottom-left
+        for r in range(6, 10):
+            for c in range(0, r - 5):
+                if self.board[r][c] != 1:
+                    break
+            else:
+                continue
+            break
+        else:
+            return 1
+
+        # Player 2 wins if all pieces are in bottom-right
+        for r in range(6, 10):
+            for c in range(6, r + 1):
+                if self.board[r][c] != 2:
+                    break
+            else:
+                continue
+            break
+        else:
+            return 2
+
+        # Player 3 wins if all pieces are in top
+        for r in range(4):
+            for c in range(r + 1):
+                if self.board[r][c] != 3:
+                    break
+            else:
+                continue
+            break
+        else:
+            return 3
+
+        return None
+
     # GET BOARD
     def get_board(self):
         print("Getting board" + str(self.board) + "\n")
