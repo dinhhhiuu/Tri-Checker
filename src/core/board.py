@@ -9,6 +9,15 @@ directions = [
 
 class TriangleBoard:
     def __init__(self, size = 10):
+        '''
+            [
+                [0],
+                [0, 0],
+                [0, 0, 0],
+                ...
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+             ]
+        '''
         self.size = size
 
         # Tạo board tam giác [[0], [0, 0], [0, 0, 0], ...]
@@ -19,31 +28,36 @@ class TriangleBoard:
 
     # SET PIECE
     def _set_piece(self, row, col, piece):
+        '''Đặt piece (0: trống, 1: player 1, 2: player 2, 3: player 3) vào vị trí (row, col)'''
         if self._is_valid_position(row, col):
             self.board[row][col] = piece
 
     # GET PIECE
     def _get_piece(self, row, col):
+        '''Lấy piece ở vị trí (row, col)'''
         if self._is_valid_position(row, col):
             return self.board[row][col]
         return None
 
     # CHECK VALID POSITION
     def _is_valid_position(self, row, col):
+        '''Kiểm tra xem (row, col) có nằm trong board tam giác hay không'''
         return 0 <= row < self.size and 0 <= col <= row
     
     # CHECK EMPTY POSITION
     def _is_empty_position(self, row, col):
+        '''Kiểm tra xem (row, col) có trống hay không'''
         if not self._is_valid_position(row, col):
             return False
         return self._get_piece(row, col) == 0
 
     # CHECK JUMP POSITIONS
     def _get_jump_paths(self, row, col, path=None, visited=None):
+        '''Đệ quy tìm tất cả đường nhảy hợp lệ từ vị trí (row, col)'''
         if path is None:
             path = [(row, col)]
         if visited is None:
-            visited = set()
+            visited = set() # tập hợp các vị trí đã nhảy qua để tránh nhảy vòng lại
 
         all_paths = []
         has_jump = False
@@ -66,6 +80,7 @@ class TriangleBoard:
             if not self._is_empty_position(jump_r, jump_c):
                 continue
 
+            # tránh nhảy vòng lại
             if (jump_r, jump_c) in visited:
                 continue
 
@@ -90,6 +105,7 @@ class TriangleBoard:
 
     # CHECK NORMAL MOVES
     def _get_normal_moves(self, row, col):
+        '''Tìm tất cả nước đi bình thường (di chuyển 1 ô) từ vị trí (row, col)'''
         normal_moves = []
 
         for dr, dc in directions:
@@ -101,6 +117,7 @@ class TriangleBoard:
     
     # GET ALL MOVES (JUMP + NORMAL)
     def get_all_moves(self, row, col):
+        '''Tìm tất cả nước đi hợp lệ (bao gồm nhảy và di chuyển bình thường) từ vị trí (row, col)'''
         jump_moves = self._get_jump_paths(row, col)
         normal_moves = self._get_normal_moves(row, col)
 
@@ -113,59 +130,41 @@ class TriangleBoard:
 
     # CHECK WINNER
     def check_winner(self):
-        # Player 1 wins if all pieces are in bottom-left
-        for r in range(6, 10):
-            for c in range(0, r - 5):
-                if self.board[r][c] != 1:
-                    break
-            else:
-                continue
-            break
-        else:
-            return 1
+        '''Kiểm tra xem có người chơi nào thắng chưa (chỉ còn 1 người chơi có quân trên board)'''
+        players = [1, 2, 3]
 
-        # Player 2 wins if all pieces are in bottom-right
-        for r in range(6, 10):
-            for c in range(6, r + 1):
-                if self.board[r][c] != 2:
-                    break
-            else:
-                continue
-            break
-        else:
-            return 2
+        alive = []
 
-        # Player 3 wins if all pieces are in top
-        for r in range(4):
-            for c in range(r + 1):
-                if self.board[r][c] != 3:
-                    break
-            else:
-                continue
-            break
-        else:
-            return 3
+        for p in players:
+            if len(self.get_all_pieces(p)) > 0:
+                alive.append(p)
+
+        if len(alive) == 1:
+            return alive[0]
 
         return None
 
     # GET BOARD
     def get_board(self):
+        '''Trả về trạng thái hiện tại của board dưới dạng list of lists'''
         print("Getting board" + str(self.board) + "\n")
         return self.board
     
     # GET ALL PIECES FOR A PLAYER
     def get_all_pieces(self, player):
+        '''Lấy tất cả vị trí quân của player trên board'''
         res = []
         for r in range(self.size):
             for c in range(r + 1):
                 if self.board[r][c] == player:
                     res.append((r, c))
-        print("Getting all pieces for player " + str(player) + ": " + str(res) + "\n")
+        # print("Getting all pieces for player " + str(player) + ": " + str(res) + "\n")
         return res
     
     # PRINT BOARD
-    def print_board(self):
+    def print_board(self):    
         for r in range(self.size):
+            '''In ra board theo dạng tam giác, dùng '.' cho ô trống, '1' cho quân player 1, '2' cho quân player 2, '3' cho quân player 3'''
             print(' ' * (self.size - r - 1), end='')  # In khoảng trắng để tạo hình tam giác
             for c in range(r + 1):
                 piece = self.board[r][c]

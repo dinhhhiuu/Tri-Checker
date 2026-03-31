@@ -1,0 +1,1 @@
+'''Core game logic for the Triangle Board Game.'''
