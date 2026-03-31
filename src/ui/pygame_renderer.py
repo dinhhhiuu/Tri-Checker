@@ -54,16 +54,6 @@ def draw(screen, board, selected, moves, *, flip: bool = True):
     if flip:
         pygame.display.flip()
 
-# APPLY MOVE
-def apply_move(board, path):
-    ''' Swap piece from start to end '''
-    start = path[0]
-    end = path[-1]
-
-    piece = board.board[start[0]][start[1]]
-    board.board[start[0]][start[1]] = 0
-    board.board[end[0]][end[1]] = piece
-
 def draw_winner(screen, winner, *, flip: bool = True): # sau dấu * là keyword-only argument, chỉ có thể truyền bằng tên khi gọi hàm
     global _WINNER_FONT
 
@@ -77,22 +67,45 @@ def draw_winner(screen, winner, *, flip: bool = True): # sau dấu * là keyword
 
     # screen.fill((0, 0, 0))  # xóa màn hình (màu đen)
 
-    # Winner panel
+    # Winner panel + buttons
+    _, btn_font, _ = _get_menu_fonts()
+
     text = _WINNER_FONT.render(f"Player {winner} wins!", True, COLORS[winner])
-    text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+    restart_text = btn_font.render("Restart", True, (0, 0, 0))
+    menu_text = btn_font.render("Menu", True, (0, 0, 0))
 
     padding = 24
-    panel_rect = text_rect.inflate(padding * 2, padding * 2)
+    gap = 16
+    btn_w, btn_h = 180, 54
+
+    content_w = max(text.get_width(), btn_w * 2 + gap)
+    panel_w = content_w + padding * 2
+    panel_h = text.get_height() + gap + btn_h + padding * 2
+
+    panel_rect = pygame.Rect(0, 0, panel_w, panel_h)
+    panel_rect.center = (WIDTH // 2, HEIGHT // 2)
 
     panel = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
     panel.fill((30, 30, 30, 230))
     screen.blit(panel, panel_rect.topleft)
     pygame.draw.rect(screen, COLORS[winner], panel_rect, 3, border_radius=12)
 
+    text_rect = text.get_rect(midtop=(panel_rect.centerx, panel_rect.top + padding))
     screen.blit(text, text_rect)
+
+    buttons_top = text_rect.bottom + gap
+    restart_rect = pygame.Rect(0, 0, btn_w, btn_h)
+    menu_rect = pygame.Rect(0, 0, btn_w, btn_h)
+    restart_rect.topleft = (panel_rect.left + padding, buttons_top)
+    menu_rect.topright = (panel_rect.right - padding, buttons_top)
+
+    _draw_button(screen, restart_rect, "Restart")
+    _draw_button(screen, menu_rect, "Menu")
+
     if flip:
         pygame.display.flip()
 
+    return restart_rect, menu_rect
 
 def _get_menu_fonts():
     global _MENU_TITLE_FONT, _MENU_BUTTON_FONT, _MENU_SMALL_FONT
@@ -106,14 +119,12 @@ def _get_menu_fonts():
 
     return _MENU_TITLE_FONT, _MENU_BUTTON_FONT, _MENU_SMALL_FONT
 
-
 def _draw_button(screen, rect: pygame.Rect, label: str) -> None:
     _, btn_font, _ = _get_menu_fonts()
     pygame.draw.rect(screen, (200, 200, 200), rect, border_radius=12)
     pygame.draw.rect(screen, (255, 255, 0), rect, 2, border_radius=12)
     text = btn_font.render(label, True, (0, 0, 0))
     screen.blit(text, text.get_rect(center=rect.center))
-
 
 def draw_menu(screen, play_rect, setting_rect, exit_rect, *, flip: bool = True) -> None:
     title_font, _, _ = _get_menu_fonts()
@@ -128,7 +139,6 @@ def draw_menu(screen, play_rect, setting_rect, exit_rect, *, flip: bool = True) 
 
     if flip:
         pygame.display.flip()
-
 
 def draw_settings(screen, back_rect, mode_rects, player_modes, *, flip: bool = True) -> None:
     title_font, _, small_font = _get_menu_fonts()
