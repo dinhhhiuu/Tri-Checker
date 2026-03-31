@@ -1,10 +1,19 @@
 import pygame
 import sys
-from src.core.board import TriangleBoard
-from src.ui.config import WIDTH, HEIGHT
-from src.ui.pygame_renderer import get_cell_from_mouse, draw, apply_move, draw_winner, draw_menu, draw_settings
 
-MODES = ("player", "random", "minimax", "mcts")
+from src.core.board import TriangleBoard
+from src.core.move import apply_move
+from src.core.utils import next_player
+
+from src.ui.config import WIDTH, HEIGHT, MODES
+from src.ui.pygame_renderer import get_cell_from_mouse, draw, draw_winner, draw_menu, draw_settings
+
+from src.ai.random_ai import choose_random_move
+from src.ai.minimax_ai import choose_minimax_move
+from src.ai.mcts_ai import choose_mcts_move
+
+def next_player(player: int) -> int:
+    return 1 if player == 3 else player + 1
 
 # INIT PLAYER POSITIONS
 def init_players(board):
@@ -32,7 +41,7 @@ def main():
 
     state = "menu"  # 'menu' | 'settings' | 'game'
 
-    # settings (store only; not used for AI yet)
+    # settings (store only)
     player_modes = {1: "player", 2: "player", 3: "player"}
 
     # game state (created on Play)
@@ -41,15 +50,21 @@ def main():
     valid_moves = []
     winner = None
     game_over = False
+    turn = 1
+    win_restart_rect = None
+    win_menu_rect = None
 
     def start_game():
-        nonlocal board, selected, valid_moves, winner, game_over
+        nonlocal board, selected, valid_moves, winner, game_over, turn, win_restart_rect, win_menu_rect
         board = TriangleBoard()
         init_players(board)
         selected = None
         valid_moves = []
         winner = None
         game_over = False
+        turn = 1
+        win_restart_rect = None
+        win_menu_rect = None
 
     # Menu UI rects
     btn_w, btn_h = 280, 64
@@ -99,6 +114,16 @@ def main():
 
             elif state == "game":
                 if game_over:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if win_restart_rect and win_restart_rect.collidepoint(event.pos):
+                            start_game()
+                        elif win_menu_rect and win_menu_rect.collidepoint(event.pos):
+                            state = "menu"
+                    continue
+
+                # Only accept mouse input on the current player's turn,
+                # and only if that player's mode is 'player'.
+                if player_modes.get(turn, "player") != "player":
                     continue
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -109,9 +134,9 @@ def main():
 
                     r, c = cell
 
-                    # chọn quân (giữ logic hiện tại: chỉ cho Player 1)
+                    # chọn quân (chỉ cho đúng player đang tới lượt)
                     if selected is None:
-                        if board.board[r][c] == 1:
+                        if board.board[r][c] == turn:
                             selected = (r, c)
                             valid_moves = board.get_all_moves(r, c)
 
@@ -127,6 +152,7 @@ def main():
 
                         if chosen:
                             apply_move(board, chosen)
+                            turn = next_player(turn)
 
                         selected = None
                         valid_moves = []
@@ -147,12 +173,46 @@ def main():
             if winner:
                 game_over = True
 
+        # Apply non-player modes (placeholder AI) one move per frame
+        if not game_over:
+            mode = player_modes.get(turn, "player")
+
+            # PLAYER -> không làm gì, chờ click
+            if mode == "player":
+                pass
+
+            else:
+                move = None
+
+                if mode == "random":
+                    move = choose_random_move(board, turn, mode)
+
+                elif mode == "minimax":
+                    move = choose_minimax_move(board, turn, mode="minimax", depth=3)
+
+                elif mode == "mcts":
+                    move = choose_mcts_move(board, turn, mode="mcts", simulations=1000)
+
+                else:
+                    raise ValueError(f"Unknown mode for player {turn}: {mode}")
+
+                if move:
+                    apply_move(board, move)
+
+                # reset UI state
+                selected = None
+                valid_moves = []
+
+                # đổi lượt
+                turn = next_player(turn)
+
         draw(screen, board, selected, valid_moves, flip=False)
         if game_over and winner:
-            draw_winner(screen, winner, flip=False)
+            win_restart_rect, win_menu_rect = draw_winner(screen, winner, flip=False)
         pygame.display.flip()
 
         clock.tick(60)
+
 
 if __name__ == "__main__":
     main()
