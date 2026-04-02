@@ -11,4 +11,5 @@ COLORS = {
     3: (80, 255, 120)    # AI2 - green
 }
 
+PLAYERS = [1, 2, 3]
 MODES = ("player", "random", "minimax", "mcts")

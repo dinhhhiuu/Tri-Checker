@@ -5,6 +5,8 @@ def apply_move(board, path):
         Path là list các vị trí (row, col) mà quân sẽ đi qua, bao gồm cả vị trí đầu và cuối. \n
         Hàm này sẽ di chuyển quân từ vị trí đầu đến vị trí cuối, 
         đồng thời xử lý việc ăn quân nếu có nhảy qua.
+        \n
+        => Thay đổi trực tiếp board được truyền vào, không trả về gì.
     '''
     piece = board.board[path[0][0]][path[0][1]]
 

@@ -83,6 +83,7 @@ def main():
     }
 
     while True:
+        human_moved_this_frame = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -153,6 +154,7 @@ def main():
                         if chosen:
                             apply_move(board, chosen)
                             turn = next_player(turn)
+                            human_moved_this_frame = True
 
                         selected = None
                         valid_moves = []
@@ -173,8 +175,9 @@ def main():
             if winner:
                 game_over = True
 
-        # Apply non-player modes (placeholder AI) one move per frame
-        if not game_over:
+        # Apply non-player modes one move per frame.
+        # If the human just moved, draw that move first (AI moves next frame)
+        if not game_over and not human_moved_this_frame:
             mode = player_modes.get(turn, "player")
 
             # PLAYER -> không làm gì, chờ click
@@ -188,10 +191,10 @@ def main():
                     move = choose_random_move(board, turn, mode)
 
                 elif mode == "minimax":
-                    move = choose_minimax_move(board, turn, mode="minimax", depth=3)
+                    move = choose_minimax_move(board, turn, mode="minimax", depth=2)
 
                 elif mode == "mcts":
-                    move = choose_mcts_move(board, turn, mode="mcts", simulations=1000)
+                    move = choose_mcts_move(board, turn, mode="mcts", simulations=100)
 
                 else:
                     raise ValueError(f"Unknown mode for player {turn}: {mode}")
