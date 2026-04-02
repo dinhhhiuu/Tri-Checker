@@ -6,7 +6,7 @@ from src.core.move import apply_move
 from src.core.utils import next_player
 
 from src.ui.config import WIDTH, HEIGHT, MODES
-from src.ui.pygame_renderer import get_cell_from_mouse, draw, draw_winner, draw_menu, draw_settings, draw_pause
+from src.ui.pygame_renderer import get_cell_from_mouse, draw, draw_winner, draw_menu, draw_settings, draw_pause, draw_hud
 
 from src.ai.random_ai import choose_random_move
 from src.ai.minimax_ai import choose_minimax_move
@@ -199,6 +199,7 @@ def main():
         # state == 'game'
         if paused:
             draw(screen, board, selected, valid_moves, flip=False)
+            draw_hud(screen, player_modes, turn)
             pause_continue_rect, pause_menu_rect, pause_quit_rect = draw_pause(screen, flip=False)
             pygame.display.flip()
             clock.tick(60)
@@ -244,6 +245,7 @@ def main():
                 turn = next_player(turn)
 
         draw(screen, board, selected, valid_moves, flip=False)
+        draw_hud(screen, player_modes, turn)
         if game_over and winner:
             win_restart_rect, win_menu_rect = draw_winner(screen, winner, flip=False)
         pygame.display.flip()

@@ -214,4 +214,39 @@ def draw_settings(screen, back_rect, mode_rects, player_modes, *, flip: bool = T
 
     if flip:
         pygame.display.flip()
+
+
+def draw_hud(screen, player_modes, turn: int, *, flip: bool = False) -> None:
+    """Draw current turn + player modes (top-left)."""
+
+    _title_font, _btn_font, small_font = _get_menu_fonts()
+
+    lines = [
+        f"Turn: Player {turn}",
+        f"P1: {player_modes.get(1, 'player')}",
+        f"P2: {player_modes.get(2, 'player')}",
+        f"P3: {player_modes.get(3, 'player')}",
+    ]
+
+    rendered = [small_font.render(line, True, (255, 255, 255)) for line in lines]
+
+    pad = 10
+    gap = 6
+    w = max(s.get_width() for s in rendered) + pad * 2
+    h = sum(s.get_height() for s in rendered) + gap * (len(rendered) - 1) + pad * 2
+
+    rect = pygame.Rect(16, 16, w, h)
+
+    panel = pygame.Surface(rect.size, pygame.SRCALPHA)
+    panel.fill((30, 30, 30, 200))
+    screen.blit(panel, rect.topleft)
+    pygame.draw.rect(screen, (255, 255, 0), rect, 2, border_radius=10)
+
+    y = rect.top + pad
+    for surf in rendered:
+        screen.blit(surf, (rect.left + pad, y))
+        y += surf.get_height() + gap
+
+    if flip:
+        pygame.display.flip()
     
