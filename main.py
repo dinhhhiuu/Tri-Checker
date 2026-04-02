@@ -6,7 +6,7 @@ from src.core.move import apply_move
 from src.core.utils import next_player
 
 from src.ui.config import WIDTH, HEIGHT, MODES
-from src.ui.pygame_renderer import get_cell_from_mouse, draw, draw_winner, draw_menu, draw_settings
+from src.ui.pygame_renderer import get_cell_from_mouse, draw, draw_winner, draw_menu, draw_settings, draw_pause
 
 from src.ai.random_ai import choose_random_move
 from src.ai.minimax_ai import choose_minimax_move
@@ -53,9 +53,14 @@ def main():
     turn = 1
     win_restart_rect = None
     win_menu_rect = None
+    paused = False
+    pause_continue_rect = None
+    pause_menu_rect = None
+    pause_quit_rect = None
 
     def start_game():
         nonlocal board, selected, valid_moves, winner, game_over, turn, win_restart_rect, win_menu_rect
+        nonlocal paused, pause_continue_rect, pause_menu_rect, pause_quit_rect
         board = TriangleBoard()
         init_players(board)
         selected = None
@@ -65,6 +70,10 @@ def main():
         turn = 1
         win_restart_rect = None
         win_menu_rect = None
+        paused = False
+        pause_continue_rect = None
+        pause_menu_rect = None
+        pause_quit_rect = None
 
     # Menu UI rects
     btn_w, btn_h = 280, 64
@@ -122,6 +131,24 @@ def main():
                             state = "menu"
                     continue
 
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    paused = not paused
+                    selected = None
+                    valid_moves = []
+                    continue
+
+                if paused:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if pause_continue_rect and pause_continue_rect.collidepoint(event.pos):
+                            paused = False
+                        elif pause_menu_rect and pause_menu_rect.collidepoint(event.pos):
+                            paused = False
+                            state = "menu"
+                        elif pause_quit_rect and pause_quit_rect.collidepoint(event.pos):
+                            pygame.quit()
+                            sys.exit()
+                    continue
+
                 # Only accept mouse input on the current player's turn,
                 # and only if that player's mode is 'player'.
                 if player_modes.get(turn, "player") != "player":
@@ -170,6 +197,13 @@ def main():
             continue
 
         # state == 'game'
+        if paused:
+            draw(screen, board, selected, valid_moves, flip=False)
+            pause_continue_rect, pause_menu_rect, pause_quit_rect = draw_pause(screen, flip=False)
+            pygame.display.flip()
+            clock.tick(60)
+            continue
+
         if not game_over:
             winner = board.check_winner()
             if winner:
@@ -194,7 +228,7 @@ def main():
                     move = choose_minimax_move(board, turn, mode="minimax", depth=2)
 
                 elif mode == "mcts":
-                    move = choose_mcts_move(board, turn, mode="mcts", simulations=100)
+                    move = choose_mcts_move(board, turn, mode="mcts", simulations=300)
 
                 else:
                     raise ValueError(f"Unknown mode for player {turn}: {mode}")

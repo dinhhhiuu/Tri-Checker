@@ -107,6 +107,53 @@ def draw_winner(screen, winner, *, flip: bool = True): # sau dấu * là keyword
 
     return restart_rect, menu_rect
 
+def draw_pause(screen, *, flip: bool = True):
+    """Draw pause overlay and return (continue_rect, menu_rect, quit_rect)."""
+
+    title_font, _btn_font, small_font = _get_menu_fonts()
+
+    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 140))
+    screen.blit(overlay, (0, 0))
+
+    padding = 24
+    gap = 14
+    btn_w, btn_h = 220, 56
+
+    title = title_font.render("Paused", True, (255, 255, 255))
+
+    content_w = max(title.get_width(), btn_w)
+    panel_w = content_w + padding * 2
+    panel_h = title.get_height() + gap + (btn_h * 3) + (gap * 2) + padding * 2
+
+    panel_rect = pygame.Rect(0, 0, panel_w, panel_h)
+    panel_rect.center = (WIDTH // 2, HEIGHT // 2)
+
+    panel = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
+    panel.fill((30, 30, 30, 230))
+    screen.blit(panel, panel_rect.topleft)
+    pygame.draw.rect(screen, (255, 255, 0), panel_rect, 3, border_radius=12)
+
+    title_rect = title.get_rect(midtop=(panel_rect.centerx, panel_rect.top + padding))
+    screen.blit(title, title_rect)
+
+    y = title_rect.bottom + gap
+    continue_rect = pygame.Rect(0, 0, btn_w, btn_h)
+    menu_rect = pygame.Rect(0, 0, btn_w, btn_h)
+    quit_rect = pygame.Rect(0, 0, btn_w, btn_h)
+    continue_rect.midtop = (panel_rect.centerx, y)
+    menu_rect.midtop = (panel_rect.centerx, y + btn_h + gap)
+    quit_rect.midtop = (panel_rect.centerx, y + (btn_h + gap) * 2)
+
+    _draw_button(screen, continue_rect, "Continue")
+    _draw_button(screen, menu_rect, "Menu")
+    _draw_button(screen, quit_rect, "Quit")
+
+    if flip:
+        pygame.display.flip()
+
+    return continue_rect, menu_rect, quit_rect
+
 def _get_menu_fonts():
     global _MENU_TITLE_FONT, _MENU_BUTTON_FONT, _MENU_SMALL_FONT
 
