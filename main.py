@@ -6,7 +6,7 @@ from src.core.move import apply_move
 from src.core.utils import next_player
 
 from src.ui.config import WIDTH, HEIGHT, MODES
-from src.ui.pygame_renderer import get_cell_from_mouse, draw, draw_winner, draw_menu, draw_settings, draw_pause, draw_hud
+from src.ui.pygame_renderer import get_cell_from_mouse, draw, draw_winner, draw_menu, draw_settings, draw_pause, draw_hud, draw_ai_path
 
 from src.ai.random_ai import choose_random_move
 from src.ai.minimax_ai import choose_minimax_move
@@ -58,9 +58,13 @@ def main():
     pause_menu_rect = None
     pause_quit_rect = None
 
+    last_ai_path = None
+    last_ai_player = None
+
     def start_game():
         nonlocal board, selected, valid_moves, winner, game_over, turn, win_restart_rect, win_menu_rect
         nonlocal paused, pause_continue_rect, pause_menu_rect, pause_quit_rect
+        nonlocal last_ai_path, last_ai_player
         board = TriangleBoard()
         init_players(board)
         selected = None
@@ -74,6 +78,9 @@ def main():
         pause_continue_rect = None
         pause_menu_rect = None
         pause_quit_rect = None
+
+        last_ai_path = None
+        last_ai_player = None
 
     # Menu UI rects
     btn_w, btn_h = 280, 64
@@ -182,6 +189,8 @@ def main():
                             apply_move(board, chosen)
                             turn = next_player(turn)
                             human_moved_this_frame = True
+                            last_ai_path = None
+                            last_ai_player = None
 
                         selected = None
                         valid_moves = []
@@ -199,6 +208,8 @@ def main():
         # state == 'game'
         if paused:
             draw(screen, board, selected, valid_moves, flip=False)
+            if last_ai_path and last_ai_player:
+                draw_ai_path(screen, last_ai_path, last_ai_player)
             draw_hud(screen, player_modes, turn)
             pause_continue_rect, pause_menu_rect, pause_quit_rect = draw_pause(screen, flip=False)
             pygame.display.flip()
@@ -229,12 +240,14 @@ def main():
                     move = choose_minimax_move(board, turn, mode="minimax", depth=2)
 
                 elif mode == "mcts":
-                    move = choose_mcts_move(board, turn, mode="mcts", simulations=300)
+                    move = choose_mcts_move(board, turn, mode="mcts", simulations=200)
 
                 else:
                     raise ValueError(f"Unknown mode for player {turn}: {mode}")
 
                 if move:
+                    last_ai_path = move
+                    last_ai_player = turn
                     apply_move(board, move)
 
                 # reset UI state
@@ -245,6 +258,8 @@ def main():
                 turn = next_player(turn)
 
         draw(screen, board, selected, valid_moves, flip=False)
+        if last_ai_path and last_ai_player:
+            draw_ai_path(screen, last_ai_path, last_ai_player)
         draw_hud(screen, player_modes, turn)
         if game_over and winner:
             win_restart_rect, win_menu_rect = draw_winner(screen, winner, flip=False)

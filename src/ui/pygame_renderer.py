@@ -215,7 +215,6 @@ def draw_settings(screen, back_rect, mode_rects, player_modes, *, flip: bool = T
     if flip:
         pygame.display.flip()
 
-
 def draw_hud(screen, player_modes, turn: int, *, flip: bool = False) -> None:
     """Draw current turn + player modes (top-left)."""
 
@@ -246,6 +245,30 @@ def draw_hud(screen, player_modes, turn: int, *, flip: bool = False) -> None:
     for surf in rendered:
         screen.blit(surf, (rect.left + pad, y))
         y += surf.get_height() + gap
+
+    if flip:
+        pygame.display.flip()
+
+def draw_ai_path(screen, path, player: int, *, flip: bool = False) -> None:
+    """Draw the path chosen by AI (or last auto-move)."""
+
+    if not path or len(path) < 2:
+        return
+
+    color = COLORS.get(player, (255, 255, 0))
+    points = [get_screen_pos(r, c) for (r, c) in path]
+
+    # draw line
+    pygame.draw.lines(screen, color, False, points, 4)
+
+    # draw points (start/end bigger)
+    for i, (x, y) in enumerate(points):
+        if i == 0 or i == len(points) - 1:
+            pygame.draw.circle(screen, color, (x, y), 10, 0)
+            pygame.draw.circle(screen, (30, 30, 30), (x, y), 10, 2)
+        else:
+            pygame.draw.circle(screen, color, (x, y), 7, 0)
+            pygame.draw.circle(screen, (30, 30, 30), (x, y), 7, 2)
 
     if flip:
         pygame.display.flip()
