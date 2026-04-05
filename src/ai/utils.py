@@ -1,0 +1,24 @@
+import math
+from typing import List, Tuple
+
+from src.core.board import TriangleBoard
+
+MovePath = List[Tuple[int, int]]
+
+def move_score(move: MovePath) -> float:
+    '''Đánh giá một move path dựa trên độ dài và số lần jump'''
+    # độ dài path
+    length = len(move)
+
+    # số lần jump (mỗi bước >1 ô là jump)
+    jumps = 0
+    for i in range(1, len(move)):
+        r1, c1 = move[i-1]
+        r2, c2 = move[i]
+        if abs(r2 - r1) == 2 or abs(c2 - c1) == 2:
+            jumps += 1
+
+    return length + jumps * 2  # trọng số jump mạnh hơn
+
+def sigmoid(x):
+    return 1 / (1 + math.exp(-x))
