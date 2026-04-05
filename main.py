@@ -217,7 +217,7 @@ def main():
             draw(screen, board, selected, valid_moves, flip=False)
             if last_ai_path and last_ai_player:
                 draw_ai_path(screen, last_ai_path, last_ai_player)
-            if last_human_path and last_human_player:
+            elif last_human_path and last_human_player:
                 draw_human_path(screen, last_human_path, last_human_player)
             draw_hud(screen, player_modes, turn)
             pause_continue_rect, pause_menu_rect, pause_quit_rect = draw_pause(screen, flip=False)
@@ -240,6 +240,10 @@ def main():
                 pass
 
             else:
+                # When it's AI's turn, hide the last human path and only show AI path.
+                last_human_path = None
+                last_human_player = None
+
                 move = None
 
                 if mode == "random":
@@ -272,7 +276,7 @@ def main():
         draw(screen, board, selected, valid_moves, flip=False)
         if last_ai_path and last_ai_player:
             draw_ai_path(screen, last_ai_path, last_ai_player)
-        if last_human_path and last_human_player:
+        elif last_human_path and last_human_player:
             draw_human_path(screen, last_human_path, last_human_player)
         draw_hud(screen, player_modes, turn)
         if game_over and winner:
