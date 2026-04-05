@@ -6,14 +6,12 @@ from src.core.move import apply_move
 from src.core.utils import next_player
 
 from src.ui.config import WIDTH, HEIGHT, MODES
-from src.ui.pygame_renderer import get_cell_from_mouse, draw, draw_winner, draw_menu, draw_settings, draw_pause, draw_hud, draw_ai_path
+from src.ui.pygame_renderer import get_cell_from_mouse, draw, draw_winner, draw_menu, draw_settings, draw_pause, draw_hud, draw_ai_path, draw_human_path
 
 from src.ai.random_ai import choose_random_move
 from src.ai.minimax_ai import choose_minimax_move
 from src.ai.mcts_ai import choose_mcts_move
-
-def next_player(player: int) -> int:
-    return 1 if player == 3 else player + 1
+from src.ai.ml_ai import choose_ml_move
 
 # INIT PLAYER POSITIONS
 def init_players(board):
@@ -61,10 +59,13 @@ def main():
     last_ai_path = None
     last_ai_player = None
 
+    last_human_path = None
+    last_human_player = None
+
     def start_game():
         nonlocal board, selected, valid_moves, winner, game_over, turn, win_restart_rect, win_menu_rect
         nonlocal paused, pause_continue_rect, pause_menu_rect, pause_quit_rect
-        nonlocal last_ai_path, last_ai_player
+        nonlocal last_ai_path, last_ai_player, last_human_path, last_human_player
         board = TriangleBoard()
         init_players(board)
         selected = None
@@ -81,6 +82,9 @@ def main():
 
         last_ai_path = None
         last_ai_player = None
+
+        last_human_path = None
+        last_human_player = None
 
     # Menu UI rects
     btn_w, btn_h = 280, 64
@@ -186,7 +190,10 @@ def main():
                                 break
 
                         if chosen:
+                            moved_player = turn
                             apply_move(board, chosen)
+                            last_human_path = chosen
+                            last_human_player = moved_player
                             turn = next_player(turn)
                             human_moved_this_frame = True
                             last_ai_path = None
@@ -210,6 +217,8 @@ def main():
             draw(screen, board, selected, valid_moves, flip=False)
             if last_ai_path and last_ai_player:
                 draw_ai_path(screen, last_ai_path, last_ai_player)
+            if last_human_path and last_human_player:
+                draw_human_path(screen, last_human_path, last_human_player)
             draw_hud(screen, player_modes, turn)
             pause_continue_rect, pause_menu_rect, pause_quit_rect = draw_pause(screen, flip=False)
             pygame.display.flip()
@@ -234,13 +243,16 @@ def main():
                 move = None
 
                 if mode == "random":
-                    move = choose_random_move(board, turn, mode)
+                    move = choose_random_move(board, turn, mode="random")
 
                 elif mode == "minimax":
-                    move = choose_minimax_move(board, turn, mode="minimax", depth=2)
+                    move = choose_minimax_move(board, turn, mode="minimax", depth=3)
 
                 elif mode == "mcts":
-                    move = choose_mcts_move(board, turn, mode="mcts", simulations=200)
+                    move = choose_mcts_move(board, turn, mode="mcts", simulations=100)
+
+                elif mode == "ml":
+                    move = choose_ml_move(board, turn, mode="ml")
 
                 else:
                     raise ValueError(f"Unknown mode for player {turn}: {mode}")
@@ -260,6 +272,8 @@ def main():
         draw(screen, board, selected, valid_moves, flip=False)
         if last_ai_path and last_ai_player:
             draw_ai_path(screen, last_ai_path, last_ai_player)
+        if last_human_path and last_human_player:
+            draw_human_path(screen, last_human_path, last_human_player)
         draw_hud(screen, player_modes, turn)
         if game_over and winner:
             win_restart_rect, win_menu_rect = draw_winner(screen, winner, flip=False)

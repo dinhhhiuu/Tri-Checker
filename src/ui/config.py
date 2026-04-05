@@ -12,4 +12,4 @@ COLORS = {
 }
 
 PLAYERS = [1, 2, 3]
-MODES = ("player", "random", "minimax", "mcts")
+MODES = ("player", "random", "minimax", "mcts", "ml")

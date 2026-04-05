@@ -272,4 +272,32 @@ def draw_ai_path(screen, path, player: int, *, flip: bool = False) -> None:
 
     if flip:
         pygame.display.flip()
+
+
+def draw_human_path(screen, path, player: int, *, flip: bool = False) -> None:
+    """Draw the path chosen by a human (mouse move)."""
+
+    if not path or len(path) < 2:
+        return
+
+    color = COLORS.get(player, (255, 255, 0))
+    points = [get_screen_pos(r, c) for (r, c) in path]
+
+    # outlined line for readability on the board
+    pygame.draw.lines(screen, (30, 30, 30), False, points, 8)
+    pygame.draw.lines(screen, color, False, points, 4)
+
+    # draw points (start/end bigger)
+    for i, (x, y) in enumerate(points):
+        if i == 0 or i == len(points) - 1:
+            pygame.draw.circle(screen, (30, 30, 30), (x, y), 12, 0)
+            pygame.draw.circle(screen, color, (x, y), 10, 0)
+            pygame.draw.circle(screen, (30, 30, 30), (x, y), 10, 2)
+        else:
+            pygame.draw.circle(screen, (30, 30, 30), (x, y), 9, 0)
+            pygame.draw.circle(screen, color, (x, y), 7, 0)
+            pygame.draw.circle(screen, (30, 30, 30), (x, y), 7, 2)
+
+    if flip:
+        pygame.display.flip()
     
