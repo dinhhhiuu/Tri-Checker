@@ -250,10 +250,10 @@ def main():
                     move = choose_random_move(board, turn, mode="random")
 
                 elif mode == "minimax":
-                    move = choose_minimax_move(board, turn, mode="minimax", depth=3)
+                    move = choose_minimax_move(board, turn, mode="minimax", depth=3, time_limit=0.3)
 
                 elif mode == "mcts":
-                    move = choose_mcts_move(board, turn, mode="mcts", simulations=100)
+                    move = choose_mcts_move(board, turn, mode="mcts", simulations=2000, time_limit=0.3)
 
                 elif mode == "ml":
                     move = choose_ml_move(board, turn, mode="ml")

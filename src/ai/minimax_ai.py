@@ -2,33 +2,48 @@ from __future__ import annotations
 
 from typing import List, Optional
 import random
+import time
 
 from src.core.board import TriangleBoard
 from src.core.move import apply_move
 from src.core.utils import next_player, get_all_moves_for_player
 
-from src.ai.utils import MovePath, clone_board
+from src.ai.utils import MovePath, clone_board, move_score
 
-def evaluate(board: TriangleBoard, player: int) -> float:
+def evaluate(board: TriangleBoard, player: int) -> List[float]:
     scores = []
 
     for p in [1, 2, 3]:
         my_pieces = board.get_all_pieces(p)
-        my_count = len(my_pieces) # số quân của mình trên board
+        my_count = len(my_pieces)
 
         enemies = [e for e in [1,2,3] if e != p]
-        enemy_count = sum(len(board.get_all_pieces(e)) for e in enemies) # tổng số quân của đối thủ trên board
+        enemy_count = sum(len(board.get_all_pieces(e)) for e in enemies)
 
-        # đơn giản: mỗi quân của mình cho +100 điểm, mỗi quân đối thủ cho -60 điểm
         score = 0
-        score += my_count * 100
-        score -= enemy_count * 60
+        # piece count with higher weight
+        score += my_count * 150
+        score -= enemy_count * 80
 
-        # mobility: mỗi nước đi hợp lệ cho mình cho +2 điểm
+        # mobility with jump bonus
         moves = 0
+        jump_moves = 0
         for (r, c) in my_pieces:
-            moves += len(board.get_all_moves(r, c))
-        score += moves * 2
+            piece_moves = board.get_all_moves(r, c)
+            moves += len(piece_moves)
+            # Count jumps (paths longer than 2 positions)
+            jump_moves += sum(1 for move in piece_moves if len(move) > 2)
+
+        score += moves * 3
+        score += jump_moves * 15  # Bonus for jump opportunities
+
+        # Center control (lower rows are more valuable in triangular board)
+        center_score = 0
+        for (r, c) in my_pieces:
+            # Weight pieces in lower rows more heavily
+            row_weight = (r + 1) / board.size
+            center_score += row_weight * 5
+        score += center_score
 
         scores.append(score)
 
@@ -72,7 +87,11 @@ def minimax(
         scores = evaluate(board, root_player)
         return scalarize(scores, root_player)
     
-    random.shuffle(moves)  # giúp prune mạnh hơn
+    # Sort moves by heuristic score for better pruning (higher scores first for maximizing, lower for minimizing)
+    if current_player == root_player:
+        moves.sort(key=move_score, reverse=True)  # Better moves first for maximizing player
+    else:
+        moves.sort(key=move_score)  # Worse moves first for minimizing player (opponent)
 
     # Nếu current_player là root_player, ta muốn chọn nước đi có điểm số cao nhất (maximizing)
     if current_player == root_player:
@@ -129,7 +148,8 @@ def choose_minimax_move(
     board: TriangleBoard,
     player: int,
     mode: str,
-    depth: int = 2
+    depth: int = 3,
+    time_limit: float = 0.5
 ) -> Optional[MovePath]:
     ''' Chọn nước đi tốt nhất cho player hiện tại bằng cách sử dụng thuật toán minimax với alpha-beta pruning.'''
     if mode != "minimax":
@@ -143,9 +163,15 @@ def choose_minimax_move(
     best_score = float("-inf")
     best_moves = []
 
-    random.shuffle(moves)
+    # Sort moves by heuristic score for better first choices
+    moves.sort(key=move_score, reverse=True)
 
+    start_time = time.time()
+    
     for move in moves:
+        if time.time() - start_time > time_limit:
+            break  # Time limit exceeded, return best found so far
+            
         new_board = clone_board(board)
         apply_move(new_board, move)
 

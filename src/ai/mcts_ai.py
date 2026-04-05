@@ -1,6 +1,7 @@
 from __future__ import annotations
 import math
 import random
+import time
 from typing import List, Optional
 
 from src.core.board import TriangleBoard
@@ -44,7 +45,7 @@ class MCTSNode:
 
         return best_node
 
-def rollout(board: TriangleBoard, player: int, max_depth: int = 500) -> tuple[float, int]:
+def rollout(board: TriangleBoard, player: int, max_depth: int = 100) -> tuple[float, int]:
     '''Thực hiện một rollout từ board hiện tại và trả về kết quả'''
     sim_board = clone_board(board)
     current_player = player
@@ -59,20 +60,21 @@ def rollout(board: TriangleBoard, player: int, max_depth: int = 500) -> tuple[fl
 
         moves = get_all_moves_for_player(sim_board, current_player)
         if not moves:
-            current_player = next_player(current_player)
-            continue
+            # No moves available, current player loses
+            return 0.0 if current_player == player else 1.0, step
 
-        # bias chọn move tốt
-        if random.random() < 0.9: 
-            top_moves = sorted(moves, key=move_score, reverse=True)[:5]
-            move = max(top_moves, key=lambda m: move_score_final(sim_board, m, current_player))
-        else:
-            move = random.choice(moves)
+        # Early evaluation if game is in late stages (few pieces left)
+        total_pieces = sum(len(sim_board.get_all_pieces(p)) for p in [1, 2, 3])
+        if total_pieces <= 6 and step > 10:  # Late game heuristic
+            return evaluate_for_mcts(sim_board, player), step
+
+        # Choose move randomly (standard MCTS rollout)
+        move = random.choice(moves)
         apply_move(sim_board, move)
 
         current_player = next_player(current_player)
 
-    # heuristic
+    # heuristic evaluation
     return evaluate_for_mcts(sim_board, player), max_depth
 
 def move_score_final(board, move, player):
@@ -98,15 +100,29 @@ def evaluate_for_mcts(board: TriangleBoard, player: int) -> float:
 
         score = 0
 
-        # piece count
-        score += my_count * 10
-        score -= enemy_count * 6
+        # piece count with higher weight
+        score += my_count * 15
+        score -= enemy_count * 8
 
-        # mobility
+        # mobility with jump bonus
         moves = 0
+        jump_moves = 0
         for (r, c) in my_pieces:
-            moves += len(board.get_all_moves(r, c))
-        score += moves * 2
+            piece_moves = board.get_all_moves(r, c)
+            moves += len(piece_moves)
+            # Count jumps (paths longer than 2 positions)
+            jump_moves += sum(1 for move in piece_moves if len(move) > 2)
+
+        score += moves * 3
+        score += jump_moves * 10  # Bonus for jump opportunities
+
+        # Center control (lower rows are more valuable in triangular board)
+        center_score = 0
+        for (r, c) in my_pieces:
+            # Weight pieces in lower rows more heavily
+            row_weight = (r + 1) / board.size
+            center_score += row_weight * 5
+        score += center_score
 
         scores[p] = score
 
@@ -115,31 +131,26 @@ def evaluate_for_mcts(board: TriangleBoard, player: int) -> float:
 
     diff = my_score - opp_score
 
-    # sigmoid
-    return sigmoid(diff / (abs(diff) + 10))
+    # sigmoid with adjusted scaling
+    return sigmoid(diff / (abs(diff) + 20))
 
 def backpropagate(node: MCTSNode, result: float, depth: int = 0):
     '''Cập nhật giá trị và số lần visit cho node và tất cả ancestor của nó'''
 
-    if result == 1.0:
-        discount = 0.995 ** min(depth, 100)
-    elif result == 0.0:
-        discount = 1.0 - (0.995 ** min(depth, 100)) * 0.3
-    else:
-        discount = 1.0
-
     while node is not None:
         node.visits += 1
-        node.value += result * discount
+        node.value += result
         node = node.parent
 
-def choose_mcts_move(board: TriangleBoard, player: int, mode: str, simulations: int = 800) -> Optional[MovePath]:
+def choose_mcts_move(board: TriangleBoard, player: int, mode: str, simulations: int = 2000, time_limit: float = 0.5) -> Optional[MovePath]:
     if mode != "mcts":
         raise ValueError(f"Invalid mode for choose_mcts_move: {mode}")
 
     root = MCTSNode(clone_board(board), player)
+    start_time = time.time()
 
-    for _ in range(simulations):
+    sim_count = 0
+    while sim_count < simulations and (time.time() - start_time) < time_limit:
         node = root
 
         # -------- SELECT --------
@@ -161,10 +172,12 @@ def choose_mcts_move(board: TriangleBoard, player: int, mode: str, simulations: 
             node = child
 
         # -------- SIMULATE --------
-        result, depth = rollout(node.board, player, max_depth=800)
+        result, depth = rollout(node.board, player, max_depth=100)
 
         # -------- BACKPROP --------
         backpropagate(node, result, depth)
+
+        sim_count += 1
 
     if not root.children:
         return None
