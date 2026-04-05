@@ -1,9 +1,16 @@
 import math
 from typing import List, Tuple
+from copy import deepcopy
 
 from src.core.board import TriangleBoard
 
 MovePath = List[Tuple[int, int]]
+
+def clone_board(board: TriangleBoard) -> TriangleBoard:
+    ''' Clone board to avoid modifying the original board when applying moves in AI algorithms '''
+    new_board = TriangleBoard(board.size)
+    new_board.board = deepcopy(board.board)
+    return new_board
 
 def move_score(move: MovePath) -> float:
     '''Đánh giá một move path dựa trên độ dài và số lần jump'''

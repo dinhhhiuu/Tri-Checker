@@ -1,13 +1,12 @@
 from __future__ import annotations
 import math
 import random
-import copy
 from typing import List, Optional
 
 from src.core.board import TriangleBoard
 from src.core.utils import next_player, get_all_moves_for_player
 from src.core.move import apply_move
-from src.ai.utils import MovePath, move_score, sigmoid
+from src.ai.utils import MovePath, clone_board, move_score, sigmoid
 
 class MCTSNode:
     '''Node trong cây MCTS'''
@@ -47,7 +46,7 @@ class MCTSNode:
 
 def rollout(board: TriangleBoard, player: int, max_depth: int = 500) -> tuple[float, int]:
     '''Thực hiện một rollout từ board hiện tại và trả về kết quả'''
-    sim_board = copy.deepcopy(board)
+    sim_board = clone_board(board)
     current_player = player
 
     for step in range(max_depth):
@@ -81,7 +80,7 @@ def move_score_final(board, move, player):
     s1 = move_score(move)
 
     # global
-    new_board = copy.deepcopy(board)
+    new_board = clone_board(board)
     apply_move(new_board, move)
     s2 = evaluate_for_mcts(new_board, player)
 
@@ -138,7 +137,7 @@ def choose_mcts_move(board: TriangleBoard, player: int, mode: str, simulations: 
     if mode != "mcts":
         raise ValueError(f"Invalid mode for choose_mcts_move: {mode}")
 
-    root = MCTSNode(copy.deepcopy(board), player)
+    root = MCTSNode(clone_board(board), player)
 
     for _ in range(simulations):
         node = root
@@ -152,7 +151,7 @@ def choose_mcts_move(board: TriangleBoard, player: int, mode: str, simulations: 
             node.untried_moves.sort(key=move_score, reverse=True)
             move = node.untried_moves.pop(0)
 
-            new_board = copy.deepcopy(node.board)
+            new_board = clone_board(node.board)
             apply_move(new_board, move)
 
             next_p = next_player(node.player)
@@ -166,15 +165,6 @@ def choose_mcts_move(board: TriangleBoard, player: int, mode: str, simulations: 
 
         # -------- BACKPROP --------
         backpropagate(node, result, depth)
-
-    # DEBUG: in ra tất cả move và số lần visit + winrate 
-    # print('MCTS')
-    # for child in root.children:
-    #     move = child.move
-    #     visits = child.visits
-    #     winrate = child.value / child.visits if child.visits > 0 else 0
-    #     print(move, "visits:", visits, "winrate:", winrate)
-    # print('\n')
 
     if not root.children:
         return None

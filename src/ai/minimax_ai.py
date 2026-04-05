@@ -1,32 +1,13 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import List, Optional
 import random
-import copy
 
 from src.core.board import TriangleBoard
 from src.core.move import apply_move
-from src.core.utils import next_player
+from src.core.utils import next_player, get_all_moves_for_player
 
-MovePath = List[Tuple[int, int]]
-
-def clone_board(board: TriangleBoard) -> TriangleBoard:
-    ''' Tạo một bản sao sâu của board để tránh ảnh hưởng đến board gốc khi áp dụng move trong minimax '''
-    new_board = TriangleBoard(board.size)
-    new_board.board = copy.deepcopy(board.board)
-    return new_board
-
-def get_all_moves_for_player(board: TriangleBoard, player: int) -> List[MovePath]:
-    ''' Lấy tất cả đường đi hợp lệ cho player hiện tại trên board '''
-    moves: List[MovePath] = []
-
-    pieces = board.get_all_pieces(player)
-
-    for (r, c) in pieces:
-        paths = board.get_all_moves(r, c)
-        moves.extend(paths)
-
-    return moves
+from src.ai.utils import MovePath, clone_board
 
 def evaluate(board: TriangleBoard, player: int) -> float:
     scores = []

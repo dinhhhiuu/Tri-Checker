@@ -7,21 +7,13 @@ from typing import Dict, Optional
 from src.core.board import TriangleBoard
 from src.core.move import apply_move
 from src.core.utils import get_all_moves_for_player, next_player
-from src.ai.utils import MovePath
+from src.ai.utils import MovePath, clone_board
 from src.ml.model_loader import load_model, predict_advantage_proba
 
 # global cache
 _LOADED = None # model loaded 
 _LOADED_PATH: Optional[str] = None 
 _WARNED_MISSING = False
-
-
-def _clone_board(board: TriangleBoard) -> TriangleBoard:
-    '''Create a deep copy of the board to simulate moves without affecting the original.'''
-    new_board = TriangleBoard(board.size)
-    new_board.board = [row[:] for row in board.board]
-    return new_board
-
 
 def _get_model(model_path: str):
     '''Load the ML model from the given path, with caching. \n
@@ -79,7 +71,7 @@ def choose_ml_move(
     best_score = float("-inf")
 
     for move in moves:
-        sim = _clone_board(board)
+        sim = clone_board(board)
         apply_move(sim, move)
 
         w = sim.check_winner()
