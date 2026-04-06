@@ -14,17 +14,17 @@ def evaluate(board: TriangleBoard, player: int) -> float:
 
     for p in [1, 2, 3]:
         my_pieces = board.get_all_pieces(p)
-        my_count = len(my_pieces) # số quân của mình trên board
+        my_count = len(my_pieces) # number of my pieces on the board
 
         enemies = [e for e in [1,2,3] if e != p]
-        enemy_count = sum(len(board.get_all_pieces(e)) for e in enemies) # tổng số quân của đối thủ trên board
+        enemy_count = sum(len(board.get_all_pieces(e)) for e in enemies) # total number of opponent pieces on the board
 
-        # đơn giản: mỗi quân của mình cho +100 điểm, mỗi quân đối thủ cho -60 điểm
+        # simple: each of my pieces gives +100 points, each opponent piece gives -60 points
         score = 0
         score += my_count * 100
         score -= enemy_count * 60
 
-        # mobility: mỗi nước đi hợp lệ cho mình cho +2 điểm
+        # mobility: each valid move for me gives +2 points
         moves = 0
         for (r, c) in my_pieces:
             moves += len(board.get_all_moves(r, c))
@@ -35,8 +35,8 @@ def evaluate(board: TriangleBoard, player: int) -> float:
     return scores
 
 def scalarize(scores: List[float], player: int) -> float:
-    ''' Chuyển từ vector điểm số (cho tất cả người chơi) sang scalar score cho player hiện tại, \n
-    dùng phương pháp "maximin" đơn giản: điểm của mình trừ đi điểm cao nhất của đối thủ. '''
+    ''' Convert the score vector (for all players) to the current player's scalar score using the \n
+    simple "maximin" method: subtract your opponent's highest score from your own score. '''
     my_score = scores[player - 1]
     enemy_scores = [scores[i] for i in range(3) if i != player - 1]
 
@@ -50,9 +50,12 @@ def minimax(
     alpha: float,
     beta: float
 ) -> float:
-    ''' Hàm minimax với alpha-beta pruning, trả về điểm số ước lượng cho root_player ở node hiện tại. '''
+    ''' 
+        The minimax function with alpha-beta pruning returns an 
+        estimated score for root_player at the current node. 
+    '''
 
-    # Kiểm tra điều kiện dừng: nếu có người thắng
+    # Check the stopping conditions: if there is a winner
     winner = board.check_winner()
     if winner is not None:
         if winner == root_player:
@@ -60,23 +63,23 @@ def minimax(
         else:
             return -1e6
 
-    # Kiểm tra điều kiện dừng: nếu đạt độ sâu tối đa
+    # Check the stopping condition: if the maximum depth is reached.
     if depth == 0:
         scores = evaluate(board, root_player)
         return scalarize(scores, root_player)
 
     moves = get_all_moves_for_player(board, current_player)
 
-    # Nếu không còn nước đi nào, đánh giá board ngay lập tức
+    # If there are no more moves, evaluate the board immediately.
     if not moves:
         scores = evaluate(board, root_player)
         return scalarize(scores, root_player)
     
-    random.shuffle(moves)  # giúp prune mạnh hơn
+    random.shuffle(moves)  # make the prune stronger
 
-    # Nếu current_player là root_player, ta muốn chọn nước đi có điểm số cao nhất (maximizing)
+    # If current_player is root_player, we want to select the move with the highest score (maximizing).
     if current_player == root_player:
-        # value khởi đầu là -inf để tìm max
+        # The starting value is -inf to find the maximum.
         value = float("-inf")
 
         for move in moves:
@@ -100,7 +103,7 @@ def minimax(
 
         return value
 
-    # Nếu current_player không phải root_player, ta giả định đối thủ sẽ chọn nước đi có điểm số thấp nhất (minimizing)
+    # If current_player is not root_player, we assume the opponent will choose the move with the lowest score (minimizing)
     else:
         value = float("inf")
 
@@ -131,7 +134,10 @@ def choose_minimax_move(
     mode: str,
     depth: int = 2
 ) -> Optional[MovePath]:
-    ''' Chọn nước đi tốt nhất cho player hiện tại bằng cách sử dụng thuật toán minimax với alpha-beta pruning.'''
+    ''' 
+        Choose the best move for the current player using 
+        the minimax algorithm with alpha-beta pruning.
+    '''
     if mode != "minimax":
         raise ValueError(f"Invalid mode for choose_minimax_move: {mode}")
     

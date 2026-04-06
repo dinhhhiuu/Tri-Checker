@@ -3,7 +3,7 @@ import sys
 
 from src.core.board import TriangleBoard
 from src.core.move import apply_move
-from src.core.utils import next_player
+from src.core.utils import next_player, init_players
 
 from src.ui.config import WIDTH, HEIGHT, MODES
 from src.ui.pygame_renderer import get_cell_from_mouse, draw, draw_winner, draw_menu, draw_settings, draw_pause, draw_hud, draw_ai_path, draw_human_path
@@ -12,23 +12,6 @@ from src.ai.random_ai import choose_random_move
 from src.ai.minimax_ai import choose_minimax_move
 from src.ai.mcts_ai import choose_mcts_move
 from src.ai.ml_ai import choose_ml_move
-
-# INIT PLAYER POSITIONS
-def init_players(board):
-    # Player 1 (top)
-    for r in range(4):
-        for c in range(r + 1):
-            board._set_piece(r, c, 1)
-
-    # Player 2 (bottom-left)
-    for r in range(6, 10):
-        for c in range(0, r - 5):
-            board._set_piece(r, c, 2)
-
-    # Player 3 (bottom-right)
-    for r in range(6, 10):
-        for c in range(6, r + 1):
-            board._set_piece(r, c, 3)
 
 def main():
     pygame.init()

@@ -9,7 +9,7 @@ from src.core.move import apply_move
 from src.ai.utils import MovePath, clone_board, move_score, sigmoid
 
 class MCTSNode:
-    '''Node trong cây MCTS'''
+    '''Nodes in the MCTS tree'''
     def __init__(self, board: TriangleBoard, player: int, parent=None, move=None):
         self.board = board
         self.player = player  
@@ -45,7 +45,7 @@ class MCTSNode:
         return best_node
 
 def rollout(board: TriangleBoard, player: int, max_depth: int = 500) -> tuple[float, int]:
-    '''Thực hiện một rollout từ board hiện tại và trả về kết quả'''
+    '''Perform a rollout from the current board and return the result'''
     sim_board = clone_board(board)
     current_player = player
 
@@ -62,7 +62,7 @@ def rollout(board: TriangleBoard, player: int, max_depth: int = 500) -> tuple[fl
             current_player = next_player(current_player)
             continue
 
-        # bias chọn move tốt
+        # bias chooses good moves
         if random.random() < 0.9: 
             top_moves = sorted(moves, key=move_score, reverse=True)[:5]
             move = max(top_moves, key=lambda m: move_score_final(sim_board, m, current_player))
@@ -119,7 +119,7 @@ def evaluate_for_mcts(board: TriangleBoard, player: int) -> float:
     return sigmoid(diff / (abs(diff) + 10))
 
 def backpropagate(node: MCTSNode, result: float, depth: int = 0):
-    '''Cập nhật giá trị và số lần visit cho node và tất cả ancestor của nó'''
+    '''Update the value and number of visits for the node and all its ancestors.'''
 
     if result == 1.0:
         discount = 0.995 ** min(depth, 100)
@@ -169,6 +169,6 @@ def choose_mcts_move(board: TriangleBoard, player: int, mode: str, simulations: 
     if not root.children:
         return None
 
-    # chọn move tốt nhất
+    # choose the child with the most visits
     best_child = max(root.children, key=lambda n: n.visits + n.value / n.visits if n.visits > 0 else 0)
     return best_child.move

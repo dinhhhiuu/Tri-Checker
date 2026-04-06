@@ -9,16 +9,15 @@ from typing import Dict, List, Literal, Optional, Sequence, Tuple
 
 from src.core.board import TriangleBoard
 from src.core.move import apply_move
-from src.core.utils import next_player, get_all_moves_for_player
+from src.core.utils import next_player, get_all_moves_for_player, init_players
 
 from src.ai.random_ai import choose_random_move
 from src.ai.minimax_ai import choose_minimax_move
 from src.ai.mcts_ai import choose_mcts_move
 from src.ai.ml_ai import choose_ml_move
+from src.ai.utils import MovePath
 
 Mode = Literal["player", "random", "minimax", "mcts", "ml"]
-MovePath = List[Tuple[int, int]]
-
 
 @dataclass
 class StepRecord:
@@ -44,23 +43,6 @@ class StepRecord:
         return json.dumps(payload, ensure_ascii=False)
 
 
-def init_players(board: TriangleBoard) -> None:
-    # Player 1 (top)
-    for r in range(4):
-        for c in range(r + 1):
-            board._set_piece(r, c, 1)
-
-    # Player 2 (bottom-left)
-    for r in range(6, 10):
-        for c in range(0, r - 5):
-            board._set_piece(r, c, 2)
-
-    # Player 3 (bottom-right)
-    for r in range(6, 10):
-        for c in range(6, r + 1):
-            board._set_piece(r, c, 3)
-
-
 def copy_board(board: TriangleBoard) -> List[List[int]]:
     '''Return a deep copy of the board state as a list of lists.'''
     return [row[:] for row in board.board]
@@ -76,7 +58,7 @@ def mobility(board: TriangleBoard, player: int) -> int:
 
 def advantage(board: TriangleBoard, *, tie_epsilon: float = 1e-6) -> Tuple[int, Dict[int, float]]:
     """
-        Return (advantage_player, scores).
+        Return (advantage_player, scores). \n
         Heuristic (fast, deterministic): piece_count heavily weighted + mobility.
         - advantage_player: 1, 2, or 3 for the player with the highest score; 0 if tie.
         - scores: dict mapping player number to their score (higher is better).
@@ -110,7 +92,7 @@ def choose_move(board: TriangleBoard, player: int, mode: Mode, rng: random.Rando
         return choose_random_move(board, player, mode="random")
 
     if mode == "minimax":
-        return choose_minimax_move(board, player, mode="minimax", depth=2)
+        return choose_minimax_move(board, player, mode="minimax", depth=3)
 
     if mode == "mcts":
         return choose_mcts_move(board, player, mode="mcts", simulations=100)
