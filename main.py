@@ -1,5 +1,7 @@
 import pygame
 import sys
+import os
+import json
 
 from src.core.board import TriangleBoard
 from src.core.move import apply_move
@@ -19,6 +21,95 @@ def main():
     pygame.display.set_caption("Triangle Board Game")
 
     clock = pygame.time.Clock()
+
+    SAVE_PATH = os.path.join("data", "savegame.json")
+
+    def _delete_save() -> None:
+        try:
+            if os.path.exists(SAVE_PATH):
+                os.remove(SAVE_PATH)
+        except OSError:
+            pass
+
+    def _save_game_if_needed() -> None:
+        """Persist current game if it's unfinished."""
+        if state != "game":
+            return
+        if board is None:
+            return
+        if game_over or winner:
+            return
+
+        os.makedirs(os.path.dirname(SAVE_PATH) or ".", exist_ok=True)
+        payload = {
+            "board_size": int(board.size),
+            "board": board.board,
+            "turn": int(turn),
+            "player_modes": {str(k): str(v) for k, v in player_modes.items()},
+        }
+        tmp_path = SAVE_PATH + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f)
+        os.replace(tmp_path, SAVE_PATH)
+
+    def _load_game_from_save() -> bool:
+        """Load saved game into current session. Returns True if loaded."""
+        nonlocal board, selected, valid_moves, winner, game_over, turn
+        nonlocal win_restart_rect, win_menu_rect, paused
+        nonlocal pause_continue_rect, pause_menu_rect, pause_quit_rect
+        nonlocal last_ai_path, last_ai_player, last_human_path, last_human_player
+        nonlocal player_modes
+
+        if not os.path.exists(SAVE_PATH):
+            return False
+
+        try:
+            with open(SAVE_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return False
+
+        try:
+            size = int(data.get("board_size", 10))
+            loaded_board = data.get("board")
+            loaded_turn = int(data.get("turn", 1))
+            loaded_modes = data.get("player_modes", {})
+        except Exception:
+            return False
+
+        if not isinstance(loaded_board, list):
+            return False
+
+        board = TriangleBoard(size)
+        board.board = loaded_board
+        turn = loaded_turn
+
+        # restore settings
+        if isinstance(loaded_modes, dict):
+            player_modes = {
+                int(k): (v if v in MODES else "player")
+                for k, v in loaded_modes.items()
+                if str(k).isdigit()
+            }
+            for p in (1, 2, 3):
+                player_modes.setdefault(p, "player")
+
+        # reset runtime UI state
+        selected = None
+        valid_moves = []
+        winner = None
+        game_over = False
+        win_restart_rect = None
+        win_menu_rect = None
+        paused = False
+        pause_continue_rect = None
+        pause_menu_rect = None
+        pause_quit_rect = None
+        last_ai_path = None
+        last_ai_player = None
+        last_human_path = None
+        last_human_player = None
+        return True
 
     state = "menu"  # 'menu' | 'settings' | 'game'
 
@@ -69,13 +160,17 @@ def main():
         last_human_path = None
         last_human_player = None
 
+        # starting a new game invalidates any previous save
+        _delete_save()
+
     # Menu UI rects
     btn_w, btn_h = 280, 64
     btn_x = (WIDTH - btn_w) // 2
-    btn_y0 = HEIGHT // 2 - 80
+    btn_y0 = HEIGHT // 2 - 130
     play_rect = pygame.Rect(btn_x, btn_y0, btn_w, btn_h)
-    setting_rect = pygame.Rect(btn_x, btn_y0 + 90, btn_w, btn_h)
-    exit_rect = pygame.Rect(btn_x, btn_y0 + 180, btn_w, btn_h)
+    continue_rect = pygame.Rect(btn_x, btn_y0 + 90, btn_w, btn_h)
+    setting_rect = pygame.Rect(btn_x, btn_y0 + 180, btn_w, btn_h)
+    exit_rect = pygame.Rect(btn_x, btn_y0 + 270, btn_w, btn_h)
 
     # Settings UI rects
     back_rect = pygame.Rect(24, 24, 140, 52)
@@ -89,6 +184,7 @@ def main():
         human_moved_this_frame = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                _save_game_if_needed()
                 pygame.quit()
                 sys.exit()
 
@@ -97,9 +193,16 @@ def main():
                     if play_rect.collidepoint(event.pos):
                         start_game()
                         state = "game"
+                    elif continue_rect.collidepoint(event.pos):
+                        if _load_game_from_save():
+                            state = "game"
+                        else:
+                            start_game()
+                            state = "game"
                     elif setting_rect.collidepoint(event.pos):
                         state = "settings"
                     elif exit_rect.collidepoint(event.pos):
+                        _save_game_if_needed()
                         pygame.quit()
                         sys.exit()
 
@@ -136,9 +239,11 @@ def main():
                         if pause_continue_rect and pause_continue_rect.collidepoint(event.pos):
                             paused = False
                         elif pause_menu_rect and pause_menu_rect.collidepoint(event.pos):
+                            _save_game_if_needed()
                             paused = False
                             state = "menu"
                         elif pause_quit_rect and pause_quit_rect.collidepoint(event.pos):
+                            _save_game_if_needed()
                             pygame.quit()
                             sys.exit()
                     continue
@@ -186,7 +291,13 @@ def main():
                         valid_moves = []
 
         if state == "menu":
-            draw_menu(screen, play_rect, setting_rect, exit_rect)
+            draw_menu(
+                screen,
+                play_rect,
+                setting_rect,
+                exit_rect,
+                continue_rect=continue_rect,
+            )
             clock.tick(60)
             continue
 
@@ -212,6 +323,8 @@ def main():
             winner = board.check_winner()
             if winner:
                 game_over = True
+                # game finished => no save to continue
+                _delete_save()
 
         # Apply non-player modes one move per frame.
         # If the human just moved, draw that move first (AI moves next frame)

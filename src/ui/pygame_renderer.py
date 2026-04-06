@@ -173,7 +173,7 @@ def _draw_button(screen, rect: pygame.Rect, label: str) -> None:
     text = btn_font.render(label, True, (0, 0, 0))
     screen.blit(text, text.get_rect(center=rect.center))
 
-def draw_menu(screen, play_rect, setting_rect, exit_rect, *, flip: bool = True) -> None:
+def draw_menu(screen, play_rect, setting_rect, exit_rect, *, continue_rect=None, flip: bool = True) -> None:
     title_font, _, _ = _get_menu_fonts()
     screen.fill((30, 30, 30))
 
@@ -181,6 +181,8 @@ def draw_menu(screen, play_rect, setting_rect, exit_rect, *, flip: bool = True) 
     screen.blit(title, title.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 180)))
 
     _draw_button(screen, play_rect, "Play")
+    if continue_rect is not None:
+        _draw_button(screen, continue_rect, "Continue")
     _draw_button(screen, setting_rect, "Setting")
     _draw_button(screen, exit_rect, "Exit")
 
