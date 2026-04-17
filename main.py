@@ -791,6 +791,13 @@ def main():
                 if game_mode == "network_host":
                     network_broadcast_required = True
 
+        # Bỏ qua lượt nếu player hiện tại hết quân
+        if not game_over and board is not None:
+            while len(board.get_all_pieces(turn)) == 0:
+                turn = next_player(turn, active_players)
+                if game_mode == "network_host":
+                    network_broadcast_required = True
+
         if not game_over and game_mode in {"local", "network_host"} and not human_moved_this_frame:
             mode = game_player_modes.get(turn, "player")
             if mode != "player":

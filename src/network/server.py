@@ -248,6 +248,9 @@ class GameRoom:
                     self.game_over = self.winner is not None
                     if not self.game_over:
                         self.turn = next_player(self.turn, self.active_players)
+                        # Bỏ qua lượt nếu player tiếp theo hết quân
+                        while not self.game_over and len(self.board.get_all_pieces(self.turn)) == 0:
+                            self.turn = next_player(self.turn, self.active_players)
                     resp = None
                     state = self._build_state()
         if resp is not None:
