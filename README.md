@@ -1,38 +1,34 @@
-## Activate virtual environment:
+# Tri-Checker — Network Guide
 
-### On macOS/Linux:
-```
-source venv/bin/activate
-```
+## Chạy online (nhiều máy)
 
-### On Windows:
+### 1. Máy chủ — chạy server
+```bash
+python server.py
 ```
-venv\Scripts\activate
-```
+Server lắng nghe trên cổng `5000`. Giữ cửa sổ này mở trong suốt ván đấu.
 
-## Setting
+### 2. Tìm IP máy chủ
+```bash
+ipconfig
 ```
-pip install -r requirements.txt
-```
+Lấy dòng **IPv4 Address** (ví dụ `192.168.1.5`).
 
-## RUN TEST
-```python
-python -m tests.test
-```
-
-## RUN GAME
-```python
+### 3. Tất cả máy — chạy game
+```bash
 python main.py
 ```
+- Vào **Settings** → nhập IP máy chủ vào ô **Host**, port `5000`.
+- Vào **Join Online** → tạo hoặc join phòng.
+- Khi đủ người, ván đấu tự bắt đầu.
 
-## ML: Generate data
-```python
-python -m src.ml.generate_data --games 50 --max-steps 200 --out data/ml_dataset.jsonl --seed 123 --p1 random --p2 random --p3 random
-```
+---
 
-## ML: Train model
-```python
-python -m src.ml.train_model --data data/ml_dataset.jsonl --out-model data/models/advantage_model.joblib --include-turn
-```
+## Cùng mạng LAN
+Dùng IP nội bộ của máy chủ (từ `ipconfig`). Không cần cấu hình thêm.
 
-Chi tiết xem: `src/ml/README.md`
+
+
+## Tạo phòng 3 người (1 người + AI)
+Khi tạo phòng, chọn **3P** → chọn chế độ **Player 3** (Random / Minimax / MCTS / ML).  
+Chỉ cần 2 người thật, Player 3 do server điều khiển tự động.

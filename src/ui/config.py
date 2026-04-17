@@ -13,3 +13,4 @@ COLORS = {
 
 PLAYERS = [1, 2, 3]
 MODES = ("player", "random", "minimax", "mcts", "ml")
+DEFAULT_NETWORK_HOST = "127.0.0.1"
