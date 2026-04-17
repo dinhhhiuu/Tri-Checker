@@ -588,9 +588,8 @@ def main():
                     else:
                         chosen = None
                         for path in valid_moves:
-                            if (row, col) in path[1:]:
-                                idx = path.index((row, col))
-                                chosen = path[: idx + 1]
+                            if path[-1] == (row, col):
+                                chosen = path
                                 break
 
                         if chosen:
@@ -757,6 +756,7 @@ def main():
                         message = payload.get("message")
                         if isinstance(message, str) and message:
                             network_notice = message
+                        waiting_for_server = False
 
         if state == "menu":
             draw_menu(
@@ -791,7 +791,7 @@ def main():
                 if game_mode == "network_host":
                     network_broadcast_required = True
 
-        if not game_over and game_mode == "local" and not human_moved_this_frame:
+        if not game_over and game_mode in {"local", "network_host"} and not human_moved_this_frame:
             mode = game_player_modes.get(turn, "player")
             if mode != "player":
                 last_human_path = None
@@ -817,6 +817,8 @@ def main():
                 selected = None
                 valid_moves = []
                 turn = next_player(turn, active_players)
+                if game_mode == "network_host":
+                    network_broadcast_required = True
 
         if network_broadcast_required and game_mode == "network_host" and network_session is not None:
             broadcast_network_state()

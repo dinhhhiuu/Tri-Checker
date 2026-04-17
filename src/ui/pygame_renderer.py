@@ -45,10 +45,13 @@ def draw(screen, board, selected, moves, *, flip: bool = True):
         x, y = get_screen_pos(*selected)
         pygame.draw.circle(screen, (0,255,0), (x,y), RADIUS+5, 3)
 
-    # highlight moves
+    # highlight moves - chỉ hiện điểm đích cuối của mỗi path
+    seen_endpoints = set()
     for path in moves:
-        for (r, c) in path[1:]:   # bỏ điểm đầu
-            x, y = get_screen_pos(r, c)
+        end = path[-1]
+        if end not in seen_endpoints:
+            seen_endpoints.add(end)
+            x, y = get_screen_pos(*end)
             pygame.draw.circle(screen, (255, 255, 0), (x, y), 8)
 
     if flip:
