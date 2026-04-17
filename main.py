@@ -791,10 +791,12 @@ def main():
                 if game_mode == "network_host":
                     network_broadcast_required = True
 
-        # Bỏ qua lượt nếu player hiện tại hết quân
-        if not game_over and board is not None:
-            while len(board.get_all_pieces(turn)) == 0:
+        # Bỏ qua lượt nếu player hiện tại hết quân (chỉ local và host, client theo server)
+        if not game_over and board is not None and game_mode != "network_client":
+            skipped = 0
+            while len(board.get_all_pieces(turn)) == 0 and skipped < len(active_players):
                 turn = next_player(turn, active_players)
+                skipped += 1
                 if game_mode == "network_host":
                     network_broadcast_required = True
 

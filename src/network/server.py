@@ -183,6 +183,7 @@ class GameRoom:
                 if not move:
                     # AI has no valid moves (pieces all captured) — skip turn
                     self.turn = next_player(self.turn, self.active_players)
+                    self._skip_dead_players()
                     state = self._build_state()
                 else:
                     apply_move(self.board, move)
@@ -192,6 +193,7 @@ class GameRoom:
                     self.game_over = self.winner is not None
                     if not self.game_over:
                         self.turn = next_player(self.turn, self.active_players)
+                        self._skip_dead_players()
                     state = self._build_state()
 
             self._broadcast(state)
@@ -221,6 +223,13 @@ class GameRoom:
             if not self.game_over:
                 self.turn = next_player(self.turn, self.active_players)
 
+    def _skip_dead_players(self) -> None:
+        """Advance turn past any players with no pieces, up to a full cycle."""
+        skipped = 0
+        while not self.game_over and len(self.board.get_all_pieces(self.turn)) == 0 and skipped < len(self.active_players):
+            self.turn = next_player(self.turn, self.active_players)
+            skipped += 1
+
     def _handle_move(self, player_id: int, payload: dict) -> None:
         with self.lock:
             client = self.clients.get(player_id)
@@ -248,9 +257,7 @@ class GameRoom:
                     self.game_over = self.winner is not None
                     if not self.game_over:
                         self.turn = next_player(self.turn, self.active_players)
-                        # Bỏ qua lượt nếu player tiếp theo hết quân
-                        while not self.game_over and len(self.board.get_all_pieces(self.turn)) == 0:
-                            self.turn = next_player(self.turn, self.active_players)
+                        self._skip_dead_players()
                     resp = None
                     state = self._build_state()
         if resp is not None:
