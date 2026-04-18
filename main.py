@@ -326,7 +326,7 @@ def main():
     btn_w, btn_h = 300, 56
     btn_gap = 16
     btn_x = (WIDTH - btn_w) // 2
-    btn_y0 = 150
+    btn_y0 = (HEIGHT - (btn_h * 5 + btn_gap * 4)) // 2 + 30
     play_rect = pygame.Rect(btn_x, btn_y0, btn_w, btn_h)
     join_rect = pygame.Rect(btn_x, btn_y0 + (btn_h + btn_gap) * 1, btn_w, btn_h)
     continue_rect = pygame.Rect(btn_x, btn_y0 + (btn_h + btn_gap) * 2, btn_w, btn_h)
@@ -588,8 +588,9 @@ def main():
                     else:
                         chosen = None
                         for path in valid_moves:
-                            if path[-1] == (row, col):
-                                chosen = path
+                            if (row, col) in path[1:]:
+                                idx = path.index((row, col))
+                                chosen = path[: idx + 1]
                                 break
 
                         if chosen:
@@ -756,7 +757,6 @@ def main():
                         message = payload.get("message")
                         if isinstance(message, str) and message:
                             network_notice = message
-                        waiting_for_server = False
 
         if state == "menu":
             draw_menu(
@@ -791,16 +791,7 @@ def main():
                 if game_mode == "network_host":
                     network_broadcast_required = True
 
-        # Bỏ qua lượt nếu player hiện tại hết quân (chỉ local và host, client theo server)
-        if not game_over and board is not None and game_mode != "network_client":
-            skipped = 0
-            while len(board.get_all_pieces(turn)) == 0 and skipped < len(active_players):
-                turn = next_player(turn, active_players)
-                skipped += 1
-                if game_mode == "network_host":
-                    network_broadcast_required = True
-
-        if not game_over and game_mode in {"local", "network_host"} and not human_moved_this_frame:
+        if not game_over and game_mode == "local" and not human_moved_this_frame:
             mode = game_player_modes.get(turn, "player")
             if mode != "player":
                 last_human_path = None
@@ -826,8 +817,6 @@ def main():
                 selected = None
                 valid_moves = []
                 turn = next_player(turn, active_players)
-                if game_mode == "network_host":
-                    network_broadcast_required = True
 
         if network_broadcast_required and game_mode == "network_host" and network_session is not None:
             broadcast_network_state()

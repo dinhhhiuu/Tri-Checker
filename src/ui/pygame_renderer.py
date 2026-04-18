@@ -45,13 +45,10 @@ def draw(screen, board, selected, moves, *, flip: bool = True):
         x, y = get_screen_pos(*selected)
         pygame.draw.circle(screen, (0,255,0), (x,y), RADIUS+5, 3)
 
-    # highlight moves - chỉ hiện điểm đích cuối của mỗi path
-    seen_endpoints = set()
+    # highlight moves
     for path in moves:
-        end = path[-1]
-        if end not in seen_endpoints:
-            seen_endpoints.add(end)
-            x, y = get_screen_pos(*end)
+        for (r, c) in path[1:]:   # bỏ điểm đầu
+            x, y = get_screen_pos(r, c)
             pygame.draw.circle(screen, (255, 255, 0), (x, y), 8)
 
     if flip:
@@ -181,7 +178,7 @@ def draw_menu(screen, play_rect, join_rect, setting_rect, exit_rect, *, continue
     screen.fill((30, 30, 30))
 
     title = title_font.render("Triangle Board Game", True, (255, 255, 255))
-    screen.blit(title, title.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 220)))
+    screen.blit(title, title.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200)))
 
     _draw_button(screen, play_rect, "Play")
     _draw_button(screen, join_rect, "Join Online")
@@ -280,13 +277,8 @@ def draw_lobby(
     border_color = (100, 180, 255) if room_input_active else (70, 70, 100)
     pygame.draw.rect(screen, (45, 45, 60), join_rect, border_radius=8)
     pygame.draw.rect(screen, border_color, join_rect, 2, border_radius=8)
-    _cursor_visible = (pygame.time.get_ticks() // 500) % 2 == 0
-    if room_input_active:
-        placeholder = input_room_id + ("|" if _cursor_visible else "")
-        id_color = (220, 220, 220)
-    else:
-        placeholder = input_room_id if input_room_id else "Room ID..."
-        id_color = (220, 220, 220) if input_room_id else (100, 100, 120)
+    placeholder = input_room_id if input_room_id else ("Room ID..." if not room_input_active else "")
+    id_color = (220, 220, 220) if input_room_id else (100, 100, 120)
     id_val = small_font.render(placeholder, True, id_color)
     screen.blit(id_val, id_val.get_rect(midleft=(join_rect.left + 12, join_rect.centery)))
 
