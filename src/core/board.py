@@ -57,49 +57,34 @@ class TriangleBoard:
         if path is None:
             path = [(row, col)]
         if visited is None:
-            visited = set() # tập hợp các vị trí đã nhảy qua để tránh nhảy vòng lại
+            visited = set()
 
         all_paths = []
-        has_jump = False
 
         for dr, dc in directions:
             mid_r, mid_c = row + dr, col + dc
             jump_r, jump_c = row + 2*dr, col + 2*dc
 
-            # check hợp lệ
             if not self._is_valid_position(mid_r, mid_c):
                 continue
             if not self._is_valid_position(jump_r, jump_c):
                 continue
-
-            # phải có quân ở giữa
             if self._is_empty_position(mid_r, mid_c):
                 continue
-
-            # ô đích phải trống
             if not self._is_empty_position(jump_r, jump_c):
                 continue
-
-            # tránh nhảy vòng lại
             if (jump_r, jump_c) in visited:
                 continue
-
-            has_jump = True
 
             new_path = path + [(jump_r, jump_c)]
             new_visited = visited | {(jump_r, jump_c)}
 
-            # tiếp tục nhảy
+            # Cho phép dừng tại điểm này
+            all_paths.append(new_path)
+
+            # Tiếp tục nhảy thêm từ điểm này
             sub_paths = self._get_jump_paths(jump_r, jump_c, new_path, new_visited)
-
-            if sub_paths:
-                all_paths.extend(sub_paths)
-            else:
-                all_paths.append(new_path)
-
-        # nếu không nhảy thêm được nữa
-        if not has_jump and len(path) > 1:
-            return [path]
+            all_paths.extend(sub_paths)
 
         return all_paths
 

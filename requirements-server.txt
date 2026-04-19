@@ -1,0 +1,2 @@
+# Minimal dependencies for running only the game server (no pygame / ML needed)
+# Install with: pip install -r requirements-server.txt
